@@ -9,7 +9,8 @@ export const maxDuration = 60;
  * open in local dev when unset.
  */
 function authorized(req: Request): boolean {
-  const secret = process.env.JOBS_RUN_SECRET;
+  // Vercel Cron sends `Authorization: Bearer $CRON_SECRET`; accept either name.
+  const secret = process.env.JOBS_RUN_SECRET ?? process.env.CRON_SECRET;
   if (!secret) return true;
   return req.headers.get('authorization') === `Bearer ${secret}`;
 }
