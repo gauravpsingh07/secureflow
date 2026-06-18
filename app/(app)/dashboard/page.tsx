@@ -29,11 +29,10 @@ export default async function DashboardPage() {
   const weekAgo = new Date(now.getTime() - 7 * DAY);
 
   const severities: AlertSeverity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
-  const [openTotal, critical, high, events24h, failed24h, activeKeys, recentEvents, recentAlerts] =
+  const [openTotal, critical, events24h, failed24h, activeKeys, recentEvents, recentAlerts] =
     await Promise.all([
       db.alert.count({ where: OPEN }),
       db.alert.count({ where: { ...OPEN, severity: 'CRITICAL' } }),
-      db.alert.count({ where: { ...OPEN, severity: 'HIGH' } }),
       db.securityEvent.count({ where: { occurredAt: { gte: dayAgo } } }),
       db.securityEvent.count({ where: { type: 'LOGIN_FAILURE', occurredAt: { gte: dayAgo } } }),
       db.apiKey.count({ where: { revokedAt: null } }),

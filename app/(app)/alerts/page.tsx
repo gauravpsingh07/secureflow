@@ -92,9 +92,12 @@ export default async function AlertsPage({
             >
               Apply
             </button>
-            <a href="/alerts" className="px-2 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
+            <Link
+              href="/alerts"
+              className="px-2 py-2 text-sm font-medium text-slate-500 hover:text-slate-700"
+            >
               Clear
-            </a>
+            </Link>
           </form>
         </CardBody>
       </Card>

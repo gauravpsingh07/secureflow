@@ -1,11 +1,10 @@
-import type { NextRequest } from 'next/server';
 import { getCurrentActor } from '@/lib/auth/session';
 import { subscribeAlerts } from '@/lib/realtime';
 
 export const dynamic = 'force-dynamic';
 
 /** Server-Sent Events stream of new alerts for the current tenant. */
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const actor = await getCurrentActor();
   if (!actor) return new Response('Unauthorized', { status: 401 });
 
