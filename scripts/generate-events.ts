@@ -125,7 +125,7 @@ function baselineTraffic(now: number): Ev[] {
 /** A credential-stuffing burst against one account from a hostile IP. */
 function bruteForceBurst(now: number): Ev[] {
   const events: Ev[] = [];
-  const start = now - 6 * HOUR;
+  const start = now - 10 * MINUTE; // inside the detection window so it fires
   const target = 'carol@northwind.test';
   const hostileIp = '203.0.113.66';
   for (let i = 0; i < 28; i++) {
@@ -144,7 +144,7 @@ function bruteForceBurst(now: number): Ev[] {
 
 /** Two successful logins too far apart to be the same traveller. */
 function impossibleTravel(now: number): Ev[] {
-  const at = now - 2 * HOUR;
+  const at = now - 12 * MINUTE; // inside the detection window
   return [
     {
       type: 'LOGIN_SUCCESS',
@@ -161,7 +161,7 @@ function impossibleTravel(now: number): Ev[] {
       ip: '45.61.122.9',
       ...GEOS.sg,
       userAgent: choice(AGENTS),
-      occurredAt: iso(at + 15 * MINUTE),
+      occurredAt: iso(at + 10 * MINUTE),
       raw: { scenario: 'impossible-travel' },
     },
   ];
