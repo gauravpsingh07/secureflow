@@ -8,6 +8,7 @@ import type { Role } from '@/lib/auth/rbac';
 const NAV: { href: string; label: string; roles: Role[] }[] = [
   { href: '/dashboard', label: 'Dashboard', roles: ['OWNER', 'ADMIN', 'ANALYST', 'VIEWER'] },
   { href: '/settings/team', label: 'Team', roles: ['OWNER', 'ADMIN'] },
+  { href: '/settings/api-keys', label: 'API keys', roles: ['OWNER', 'ADMIN'] },
 ];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
