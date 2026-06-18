@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db/client';
 import { getTenantDb } from '@/lib/db/tenant';
 import { authenticateApiKey } from '@/lib/ingest/auth';
+import { rateLimit } from '@/lib/ratelimit/tokenBucket';
 import { ingestPayloadSchema, toEventArray } from '@/lib/validation/event';
 import { normalizeEvent } from '@/lib/ingest/normalize';
 import type { Prisma } from '@/lib/generated/prisma/client';
@@ -23,6 +24,13 @@ export async function POST(req: NextRequest) {
   const rawKey = req.headers.get('x-api-key') ?? '';
   const key = await authenticateApiKey(rawKey);
   if (!key) return json({ error: 'Invalid or missing API key' }, 401);
+
+  const limit = rateLimit(`ingest:${key.id}`, key.rateLimitPerMin);
+  if (!limit.allowed) {
+    return json({ error: 'Rate limit exceeded' }, 429, {
+      'Retry-After': String(limit.retryAfterSec),
+    });
+  }
 
   const payload = await req.json().catch(() => null);
   const parsed = ingestPayloadSchema.safeParse(payload);
