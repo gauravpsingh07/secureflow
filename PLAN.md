@@ -25,7 +25,13 @@ model, and a phased, commit-by-commit build plan targeting **~56–60 commits**.
   events explorer with filters, search, pagination, and a detail panel. 19 unit tests; an
   ingestion + tenant-scope integration test runs in CI. Also fixed a Phase 1 gap: mounted the
   NextAuth route handler.
-- ⏳ **Next: Phase 3 — Detection engine (centerpiece).**
+- ✅ **Phase 3 — Detection engine (centerpiece)** (12 commits): pure-function detector
+  framework + 5 explainable detectors (failed-login spike, anomalous login rate via z-score,
+  impossible travel, new device/IP, credential stuffing), `Alert` + `AlertEvent` models with
+  RLS, alert persistence with dedupe/correlation + event linking, a worker loop and
+  `/api/jobs/run` cron route, per-detector unit tests, and an eval harness scoring **100%
+  precision/recall** on a labeled dataset. See `docs/detection-methodology.md`.
+- ⏳ **Next: Phase 4 — Alerts, dashboard & realtime.**
 
 > **Implementation note (deviation from §5 below):** to stay consistent with the existing
 > `helpdesk` codebase, multi-tenancy uses a **flat model** — a `Tenant` plus `User.tenantId`
