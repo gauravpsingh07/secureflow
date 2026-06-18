@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { scan } from '@/lib/scanner/rules';
@@ -31,7 +31,7 @@ export async function scanAction(formData: FormData): Promise<void> {
   if (!text.trim()) return;
 
   const findings = scan(text);
-  await getTenantDb(actor.tenantId).secretScan.create({
+  const created = await getTenantDb(actor.tenantId).secretScan.create({
     data: {
       tenantId: actor.tenantId,
       source,
@@ -50,5 +50,5 @@ export async function scanAction(formData: FormData): Promise<void> {
       },
     },
   });
-  revalidatePath('/scanner');
+  redirect(`/scanner/${created.id}`);
 }
