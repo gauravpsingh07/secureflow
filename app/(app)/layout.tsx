@@ -10,6 +10,7 @@ const NAV: { href: string; label: string; roles: Role[] }[] = [
   { href: '/dashboard', label: 'Dashboard', roles: ['OWNER', 'ADMIN', 'ANALYST', 'VIEWER'] },
   { href: '/alerts', label: 'Alerts', roles: ['OWNER', 'ADMIN', 'ANALYST', 'VIEWER'] },
   { href: '/events', label: 'Events', roles: ['OWNER', 'ADMIN', 'ANALYST', 'VIEWER'] },
+  { href: '/scanner', label: 'Secret scanner', roles: ['OWNER', 'ADMIN', 'ANALYST', 'VIEWER'] },
   { href: '/risk', label: 'Access review', roles: ['OWNER', 'ADMIN'] },
   { href: '/settings/detection', label: 'Detection rules', roles: ['OWNER', 'ADMIN'] },
   { href: '/settings/approvals', label: 'Approvals', roles: ['OWNER', 'ADMIN', 'ANALYST'] },

@@ -38,6 +38,7 @@ model Tenant {
   detectorSettings DetectorSetting[]
   approvalRequests ApprovalRequest[]
   notifications    Notification[]
+  secretScans      SecretScan[]
 }
 
 model User {
@@ -232,4 +233,36 @@ model Notification {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, readAt])
+}
+
+// A secret-scan run over pasted or uploaded text.
+model SecretScan {
+  id           String   @id @default(cuid())
+  tenantId     String
+  source       String
+  bytesScanned Int
+  findingCount Int
+  createdAt    DateTime @default(now())
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  findings SecretFinding[]
+
+  @@index([tenantId, createdAt])
+}
+
+// One masked secret found in a scan. Accessed via its parent SecretScan.
+model SecretFinding {
+  id          String        @id @default(cuid())
+  scanId      String
+  ruleId      String
+  ruleName    String
+  severity    AlertSeverity
+  line        Int
+  column      Int
+  maskedValue String
+  remediation String
+
+  scan SecretScan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId])
 }
