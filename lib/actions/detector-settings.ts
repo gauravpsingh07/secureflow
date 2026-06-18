@@ -6,11 +6,13 @@ import { requireRole } from '@/lib/auth/session';
 import { DETECTOR_PARAMS } from '@/lib/detection/config';
 import { detectors } from '@/lib/detection/registry';
 import { audit } from '@/lib/audit';
+import { isDemoMode } from '@/lib/demo';
 import type { Prisma } from '@/lib/generated/prisma/client';
 
 /** Enable/disable a detector and persist its threshold overrides for the tenant. */
 export async function saveDetectorSettingAction(formData: FormData): Promise<void> {
   const actor = await requireRole(['OWNER', 'ADMIN']);
+  if (isDemoMode()) return;
   const key = String(formData.get('detectorKey') ?? '');
   if (!detectors.some((d) => d.key === key)) return;
 

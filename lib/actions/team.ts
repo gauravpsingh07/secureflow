@@ -10,6 +10,7 @@ import { requireRole } from '@/lib/auth/session';
 import { signIn } from '@/auth';
 import { generateInviteToken } from '@/lib/tenant/invite';
 import { audit } from '@/lib/audit';
+import { isDemoMode, DEMO_MESSAGE } from '@/lib/demo';
 
 const inviteSchema = z.object({
   email: z.email(),
@@ -24,6 +25,7 @@ export async function inviteMemberAction(
   formData: FormData,
 ): Promise<TeamActionState> {
   const actor = await requireRole(['OWNER', 'ADMIN']);
+  if (isDemoMode()) return { error: DEMO_MESSAGE };
   const parsed = inviteSchema.safeParse({
     email: formData.get('email'),
     role: formData.get('role'),
@@ -65,6 +67,7 @@ export async function inviteMemberAction(
 /** Revoke a pending invitation (owners/admins only). */
 export async function revokeInviteAction(formData: FormData): Promise<void> {
   const actor = await requireRole(['OWNER', 'ADMIN']);
+  if (isDemoMode()) return;
   const id = String(formData.get('inviteId') ?? '');
   if (!id) return;
   await getTenantDb(actor.tenantId).invite.deleteMany({ where: { id } });
@@ -91,6 +94,7 @@ export async function acceptInviteAction(
   _prev: AcceptState,
   formData: FormData,
 ): Promise<AcceptState> {
+  if (isDemoMode()) return { error: DEMO_MESSAGE };
   const parsed = acceptSchema.safeParse({
     token: formData.get('token'),
     name: formData.get('name'),

@@ -4,6 +4,7 @@ import { requireActor } from '@/lib/auth/session';
 import { signOutAction } from '@/lib/actions/auth';
 import { prisma } from '@/lib/db/client';
 import { getTenantDb } from '@/lib/db/tenant';
+import { isDemoMode } from '@/lib/demo';
 import type { Role } from '@/lib/auth/rbac';
 
 const NAV: { href: string; label: string; roles: Role[] }[] = [
@@ -29,7 +30,16 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const links = NAV.filter((n) => n.roles.includes(actor.role));
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+      {isDemoMode() && (
+        <div
+          role="status"
+          className="bg-amber-100 px-4 py-1.5 text-center text-xs font-medium text-amber-900"
+        >
+          Read-only demo — sign-in works, but changes are disabled.
+        </div>
+      )}
+      <div className="flex flex-1">
       <aside className="flex w-60 flex-col border-r border-slate-200 bg-white p-4">
         <div className="px-2 py-3">
           <p className="text-xs font-medium tracking-wide text-indigo-500 uppercase">SecureFlow</p>
@@ -70,7 +80,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 p-8">{children}</main>
+        <main className="flex-1 p-8">{children}</main>
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db/client';
 import { signIn } from '@/auth';
 import { signUpSchema } from '@/lib/validation/auth';
 import { slugify } from '@/lib/tenant/slug';
+import { isDemoMode, DEMO_MESSAGE } from '@/lib/demo';
 
 export type SignUpState = { error?: string };
 
@@ -15,6 +16,7 @@ export type SignUpState = { error?: string };
  * signs them in. This is the only place a tenant is created.
  */
 export async function signUpAction(_prev: SignUpState, formData: FormData): Promise<SignUpState> {
+  if (isDemoMode()) return { error: DEMO_MESSAGE };
   const parsed = signUpSchema.safeParse({
     organizationName: formData.get('organizationName'),
     name: formData.get('name'),

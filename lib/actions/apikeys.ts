@@ -6,6 +6,7 @@ import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { generateApiKey } from '@/lib/apikey';
 import { audit } from '@/lib/audit';
+import { isDemoMode, DEMO_MESSAGE } from '@/lib/demo';
 
 const createSchema = z.object({ name: z.string().min(1, 'Name is required').max(60) });
 
@@ -17,6 +18,7 @@ export async function createApiKeyAction(
   formData: FormData,
 ): Promise<CreateKeyState> {
   const actor = await requireRole(['OWNER', 'ADMIN']);
+  if (isDemoMode()) return { error: DEMO_MESSAGE };
   const parsed = createSchema.safeParse({ name: formData.get('name') });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Name is required.' };
@@ -47,6 +49,7 @@ export async function createApiKeyAction(
 /** Revoke a key (soft delete via revokedAt) so it can no longer ingest. */
 export async function revokeApiKeyAction(formData: FormData): Promise<void> {
   const actor = await requireRole(['OWNER', 'ADMIN']);
+  if (isDemoMode()) return;
   const id = String(formData.get('keyId') ?? '');
   if (!id) return;
   await getTenantDb(actor.tenantId).apiKey.updateMany({

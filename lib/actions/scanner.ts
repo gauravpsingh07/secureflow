@@ -5,6 +5,7 @@ import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { scan } from '@/lib/scanner/rules';
 import { audit } from '@/lib/audit';
+import { isDemoMode } from '@/lib/demo';
 import type { Severity } from '@/lib/scanner/types';
 import type { AlertSeverity } from '@/lib/generated/prisma/enums';
 
@@ -20,6 +21,7 @@ const MAX_BYTES = 200_000;
 /** Scan pasted text or an uploaded file for secrets and persist the run. */
 export async function scanAction(formData: FormData): Promise<void> {
   const actor = await requireRole(['OWNER', 'ADMIN', 'ANALYST']);
+  if (isDemoMode()) return;
 
   const file = formData.get('file');
   let text = String(formData.get('text') ?? '');

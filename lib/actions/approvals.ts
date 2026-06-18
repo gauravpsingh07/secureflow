@@ -5,11 +5,13 @@ import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { isRiskyAction, type RiskyActionKey } from '@/lib/approvals/catalog';
 import { audit } from '@/lib/audit';
+import { isDemoMode } from '@/lib/demo';
 import type { TenantDb } from '@/lib/db/tenant';
 
 /** File a request for a risky action. Any non-viewer can request; an owner approves. */
 export async function requestApprovalAction(formData: FormData): Promise<void> {
   const actor = await requireRole(['OWNER', 'ADMIN', 'ANALYST']);
+  if (isDemoMode()) return;
   const action = String(formData.get('action') ?? '');
   if (!isRiskyAction(action)) return;
   const note = String(formData.get('note') ?? '').slice(0, 280) || null;
@@ -36,6 +38,7 @@ export async function requestApprovalAction(formData: FormData): Promise<void> {
 /** Approve (and execute) or deny a pending request. Owners only. */
 export async function decideApprovalAction(formData: FormData): Promise<void> {
   const actor = await requireRole(['OWNER']);
+  if (isDemoMode()) return;
   const id = String(formData.get('requestId') ?? '');
   const decision = String(formData.get('decision') ?? '');
   if (!id || (decision !== 'approve' && decision !== 'deny')) return;
