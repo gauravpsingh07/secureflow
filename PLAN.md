@@ -19,7 +19,13 @@ model, and a phased, commit-by-commit build plan targeting **~56–60 commits**.
   credentials with JWT (tenantId+role), sign-in/sign-up + tenant onboarding,
   tenant-scoped Prisma layer, RBAC guards + authed shell, Postgres RLS, team/invite flow,
   isolation + RBAC tests. Integration/e2e tests run in CI (need Postgres).
-- ⏳ **Next: Phase 2 — Event ingestion & API keys.**
+- ✅ **Phase 2 — Event ingestion & API keys** (9 commits): SecurityEvent + ApiKey models
+  with RLS, hashed/revocable API keys + management UI, `POST /api/v1/events` ingestion with
+  Zod validation + normalization + per-key rate limiting, synthetic event generator, and an
+  events explorer with filters, search, pagination, and a detail panel. 19 unit tests; an
+  ingestion + tenant-scope integration test runs in CI. Also fixed a Phase 1 gap: mounted the
+  NextAuth route handler.
+- ⏳ **Next: Phase 3 — Detection engine (centerpiece).**
 
 > **Implementation note (deviation from §5 below):** to stay consistent with the existing
 > `helpdesk` codebase, multi-tenancy uses a **flat model** — a `Tenant` plus `User.tenantId`
