@@ -31,7 +31,13 @@ model, and a phased, commit-by-commit build plan targeting **~56–60 commits**.
   RLS, alert persistence with dedupe/correlation + event linking, a worker loop and
   `/api/jobs/run` cron route, per-detector unit tests, and an eval harness scoring **100%
   precision/recall** on a labeled dataset. See `docs/detection-methodology.md`.
-- ⏳ **Next: Phase 4 — Alerts, dashboard & realtime.**
+- ✅ **Phase 4 — Alerts, dashboard & realtime** (9 commits): alerts list + status workflow
+  (open/ack/resolved), alert detail with evidence + contributing-events timeline + remediation,
+  realtime SSE feed with an in-process "Run detection now" trigger, security posture dashboard
+  (KPIs + 7-day trend + top alerts), role/permission risk dashboard (access review), per-detector
+  rule config (enable/disable + tunable thresholds), admin approval workflow for risky actions,
+  in-app notifications + email stub, and a Playwright e2e (sign up → ingest → detect → see alert).
+- ⏳ **Next: Phase 5 — Secret scanner (centerpiece).**
 
 > **Implementation note (deviation from §5 below):** to stay consistent with the existing
 > `helpdesk` codebase, multi-tenancy uses a **flat model** — a `Tenant` plus `User.tenantId`
