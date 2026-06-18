@@ -10,6 +10,26 @@ model, and a phased, commit-by-commit build plan targeting **~56–60 commits**.
 
 ---
 
+## Progress
+
+- ✅ **Phase 0 — Foundation** (7 commits): Next.js 16 + TS + Tailwind v4, Prisma 7 +
+  Postgres, Vitest/Playwright, ESLint/Prettier, GitHub Actions CI, app shell + UI
+  primitives. Verified green: typecheck, lint, unit tests, production build.
+- ✅ **Phase 1 — Auth & multi-tenancy** (9 commits): Tenant/User/Invite models, NextAuth v5
+  credentials with JWT (tenantId+role), sign-in/sign-up + tenant onboarding,
+  tenant-scoped Prisma layer, RBAC guards + authed shell, Postgres RLS, team/invite flow,
+  isolation + RBAC tests. Integration/e2e tests run in CI (need Postgres).
+- ⏳ **Next: Phase 2 — Event ingestion & API keys.**
+
+> **Implementation note (deviation from §5 below):** to stay consistent with the existing
+> `helpdesk` codebase, multi-tenancy uses a **flat model** — a `Tenant` plus `User.tenantId`
+> + `User.role` (and an `Invite` model) — rather than a separate `Organization` + `Membership`
+> join. One tenant per user; isolation is enforced by `lib/db/tenant.ts` (app layer) and
+> Postgres RLS via `lib/db/rls.ts` (`app.current_tenant` GUC). The §5 table still lists the
+> originally-planned shape for the not-yet-built models.
+
+---
+
 ## 1. Why this project exists (positioning)
 
 This is portfolio project **#1 of a domain-coverage strategy**, but it is built and judged
