@@ -1,0 +1,17 @@
+// SecureFlow — SaaS Security Posture + Threat Detection Platform
+// Docs: https://pris.ly/d/prisma-schema
+//
+// Tenant isolation is enforced in two layers:
+//   1. Application: every query for a tenant-scoped model goes through
+//      lib/db/tenant.ts, which injects `tenantId`.
+//   2. Database: Postgres Row-Level Security policies (added via raw SQL in a
+//      migration) enforce isolation even if app code slips.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
