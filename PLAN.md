@@ -37,7 +37,12 @@ model, and a phased, commit-by-commit build plan targeting **~56–60 commits**.
   (KPIs + 7-day trend + top alerts), role/permission risk dashboard (access review), per-detector
   rule config (enable/disable + tunable thresholds), admin approval workflow for risky actions,
   in-app notifications + email stub, and a Playwright e2e (sign up → ingest → detect → see alert).
-- ⏳ **Next: Phase 5 — Secret scanner (centerpiece).**
+- ✅ **Phase 5 — Secret scanner (centerpiece)** (6 commits): a pure regex + Shannon-entropy
+  scan engine, a ruleset (AWS, GitHub, Stripe, Slack, GCP, private keys, JWT, generic
+  high-entropy), persisted scans (`SecretScan`/`SecretFinding` with RLS), a paste/upload UI +
+  findings view (severity, location, masked value, remediation), a GitHub Actions secret-scan
+  workflow (source gate + planted-secret demo), and true/false-positive tests. 39 unit tests.
+- ⏳ **Next: Phase 6 — Audit log & access review.**
 
 > **Implementation note (deviation from §5 below):** to stay consistent with the existing
 > `helpdesk` codebase, multi-tenancy uses a **flat model** — a `Tenant` plus `User.tenantId`
