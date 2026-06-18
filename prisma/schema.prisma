@@ -34,6 +34,7 @@ model Tenant {
   invites        Invite[]
   apiKeys        ApiKey[]
   securityEvents SecurityEvent[]
+  alerts         Alert[]
 }
 
 model User {
@@ -116,9 +117,60 @@ model SecurityEvent {
   occurredAt DateTime          @default(now())
   createdAt  DateTime          @default(now())
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alertEvents AlertEvent[]
 
   @@index([tenantId, occurredAt])
   @@index([tenantId, type])
   @@index([tenantId, actorEmail])
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+// Output of the detection engine. One row per correlated incident
+// (`dedupeKey`); repeat firings update `lastSeen`, `score`, and `evidence`.
+model Alert {
+  id          String        @id @default(cuid())
+  tenantId    String
+  detectorKey String
+  severity    AlertSeverity
+  status      AlertStatus   @default(OPEN)
+  title       String
+  score       Float
+  explanation String
+  evidence    Json
+  dedupeKey   String
+  firstSeen   DateTime      @default(now())
+  lastSeen    DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  events AlertEvent[]
+
+  @@unique([tenantId, dedupeKey])
+  @@index([tenantId, status])
+  @@index([tenantId, severity])
+}
+
+// Join table linking an alert to the security events that triggered it.
+model AlertEvent {
+  alertId         String
+  securityEventId String
+
+  alert Alert         @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  event SecurityEvent @relation(fields: [securityEventId], references: [id], onDelete: Cascade)
+
+  @@id([alertId, securityEventId])
+  @@index([securityEventId])
 }
