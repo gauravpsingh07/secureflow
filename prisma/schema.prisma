@@ -4,8 +4,9 @@
 // Tenant isolation is enforced in two layers:
 //   1. Application: every query for a tenant-scoped model goes through
 //      lib/db/tenant.ts, which injects `tenantId`.
-//   2. Database: Postgres Row-Level Security policies (added via raw SQL in a
-//      migration) enforce isolation even if app code slips.
+//   2. Database: Postgres Row-Level Security policies (added via raw SQL in the
+//      `*_rls` migration) enforce isolation when the request sets the
+//      `app.current_tenant` session variable. See lib/db/rls.ts.
 
 generator client {
   provider = "prisma-client"
@@ -14,4 +15,53 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  users   User[]
+  invites Invite[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  tenantId     String
+  role         Role     @default(VIEWER)
+  createdAt    DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// A pending invitation to join a tenant. An admin generates one; the recipient
+// redeems the token to create their account with the assigned role.
+model Invite {
+  id         String    @id @default(cuid())
+  tenantId   String
+  email      String
+  role       Role      @default(ANALYST)
+  token      String    @unique
+  invitedBy  String?
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
 }
