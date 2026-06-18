@@ -36,6 +36,7 @@ model Tenant {
   securityEvents   SecurityEvent[]
   alerts           Alert[]
   detectorSettings DetectorSetting[]
+  approvalRequests ApprovalRequest[]
 }
 
 model User {
@@ -189,4 +190,29 @@ model DetectorSetting {
 
   @@unique([tenantId, detectorKey])
   @@index([tenantId])
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+// A risky action that requires an owner's sign-off before it executes.
+model ApprovalRequest {
+  id              String         @id @default(cuid())
+  tenantId        String
+  action          String
+  note            String?
+  status          ApprovalStatus @default(PENDING)
+  requestedById   String
+  requestedByName String
+  decidedById     String?
+  decidedByName   String?
+  createdAt       DateTime       @default(now())
+  decidedAt       DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
 }
