@@ -23,6 +23,7 @@
     "worker": "tsx scripts/worker.ts",
     "generate:events": "tsx scripts/generate-events.ts",
     "eval": "tsx scripts/eval.ts",
+    "scan": "tsx scripts/scan-repo.ts",
     "e2e": "playwright test"
   },
   "dependencies": {
