@@ -32,7 +32,7 @@ export function LiveFeed() {
   }, [router]);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3" aria-live="polite">
       {lastTitle && <span className="hidden text-xs text-slate-400 sm:inline">new: {lastTitle}</span>}
       <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
         <span
