@@ -1,9 +1,10 @@
 import type { Detector, DetectionContext, DetectionResult, DetectorEvent, Severity } from '../types';
 import { haversineKm } from '../geo';
+import { param } from '../config';
 
 const KEY = 'impossible-travel';
 const MIN_DISTANCE_KM = 500;
-const MAX_SPEED_KMH = 900; // faster than a commercial flight ⇒ not the same traveller
+const MAX_SPEED_KMH = 900; // faster than a commercial flight ⇒ not the same traveller (tunable)
 const CRITICAL_SPEED_KMH = 2000;
 
 type Located = DetectorEvent & { latitude: number; longitude: number };
@@ -26,6 +27,7 @@ export const impossibleTravel: Detector = {
   key: KEY,
   label: 'Impossible travel',
   run(ctx: DetectionContext): DetectionResult[] {
+    const maxSpeed = param(ctx, KEY, 'maxSpeedKmh', MAX_SPEED_KMH);
     const byActor = new Map<string, Located[]>();
     for (const e of [...ctx.baseline, ...ctx.events]) {
       if (!hasGeo(e)) continue;
@@ -47,7 +49,7 @@ export const impossibleTravel: Detector = {
         const hours = (b.occurredAt.getTime() - a.occurredAt.getTime()) / 3_600_000;
         if (distance < MIN_DISTANCE_KM || hours <= 0) continue;
         const speed = distance / hours;
-        if (speed <= MAX_SPEED_KMH) continue;
+        if (speed <= maxSpeed) continue;
 
         const from = [a.city, a.country].filter(Boolean).join(', ') || 'unknown';
         const to = [b.city, b.country].filter(Boolean).join(', ') || 'unknown';

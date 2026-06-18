@@ -1,7 +1,8 @@
 import type { Detector, DetectionContext, DetectionResult, DetectorEvent, Severity } from '../types';
+import { param } from '../config';
 
 const KEY = 'failed-login-spike';
-const MIN_FAILURES = 8; // per actor within the window
+const MIN_FAILURES = 8; // per actor within the window (tunable)
 const HIGH = 15;
 const CRITICAL = 25;
 
@@ -28,9 +29,10 @@ export const failedLoginSpike: Detector = {
       byActor.set(actor, arr);
     }
 
+    const minFailures = param(ctx, KEY, 'minFailures', MIN_FAILURES);
     const results: DetectionResult[] = [];
     for (const [actor, failures] of byActor) {
-      if (failures.length < MIN_FAILURES) continue;
+      if (failures.length < minFailures) continue;
       const count = failures.length;
       const ips = new Set(failures.map((f) => f.ip ?? 'unknown'));
       results.push({
@@ -38,13 +40,13 @@ export const failedLoginSpike: Detector = {
         severity: severityFor(count),
         score: Math.min(100, Math.round((count / CRITICAL) * 100)),
         title: `Failed-login spike for ${actor}`,
-        explanation: `${count} failed logins for ${actor} from ${ips.size} IP${ips.size === 1 ? '' : 's'} within ${ctx.windowMinutes} min (threshold ${MIN_FAILURES}).`,
+        explanation: `${count} failed logins for ${actor} from ${ips.size} IP${ips.size === 1 ? '' : 's'} within ${ctx.windowMinutes} min (threshold ${minFailures}).`,
         evidence: {
           actor,
           failures: count,
           distinctIps: ips.size,
           windowMinutes: ctx.windowMinutes,
-          threshold: MIN_FAILURES,
+          threshold: minFailures,
         },
         eventIds: failures.map((f) => f.id),
         dedupeKey: `${KEY}:${actor}`,

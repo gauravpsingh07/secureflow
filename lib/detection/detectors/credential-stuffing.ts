@@ -1,7 +1,8 @@
 import type { Detector, DetectionContext, DetectionResult, DetectorEvent, Severity } from '../types';
+import { param } from '../config';
 
 const KEY = 'credential-stuffing';
-const MIN_ACCOUNTS = 5; // distinct accounts targeted from one IP within the window
+const MIN_ACCOUNTS = 5; // distinct accounts targeted from one IP within the window (tunable)
 const CRITICAL_ACCOUNTS = 15;
 
 function severityFor(accounts: number): Severity {
@@ -25,10 +26,11 @@ export const credentialStuffing: Detector = {
       byIp.set(e.ip, arr);
     }
 
+    const minAccounts = param(ctx, KEY, 'minAccounts', MIN_ACCOUNTS);
     const results: DetectionResult[] = [];
     for (const [ip, failures] of byIp) {
       const accounts = new Set(failures.map((f) => f.actorEmail ?? 'unknown'));
-      if (accounts.size < MIN_ACCOUNTS) continue;
+      if (accounts.size < minAccounts) continue;
       results.push({
         detectorKey: KEY,
         severity: severityFor(accounts.size),

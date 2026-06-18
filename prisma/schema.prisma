@@ -32,9 +32,10 @@ model Tenant {
 
   users          User[]
   invites        Invite[]
-  apiKeys        ApiKey[]
-  securityEvents SecurityEvent[]
-  alerts         Alert[]
+  apiKeys          ApiKey[]
+  securityEvents   SecurityEvent[]
+  alerts           Alert[]
+  detectorSettings DetectorSetting[]
 }
 
 model User {
@@ -173,4 +174,19 @@ model AlertEvent {
 
   @@id([alertId, securityEventId])
   @@index([securityEventId])
+}
+
+// Per-tenant tuning for a detector: on/off plus numeric threshold overrides.
+model DetectorSetting {
+  id          String   @id @default(cuid())
+  tenantId    String
+  detectorKey String
+  enabled     Boolean  @default(true)
+  config      Json?
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, detectorKey])
+  @@index([tenantId])
 }

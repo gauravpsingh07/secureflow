@@ -28,6 +28,8 @@ export type DetectionContext = {
   windowMinutes: number;
   events: DetectorEvent[];
   baseline: DetectorEvent[];
+  // Per-detector numeric threshold overrides (detectorKey → param → value).
+  params?: Record<string, Record<string, number>>;
 };
 
 /** One finding. `score` is 0–100 and explainable; `evidence` carries the numbers behind it. */

@@ -30,10 +30,14 @@ export async function runDetection(tenantId: string, now = new Date()): Promise<
   const windowStart = new Date(now.getTime() - mins * 60_000);
   const lookbackStart = new Date(now.getTime() - BASELINE_DAYS * DAY);
 
-  const rows = await getTenantDb(tenantId).securityEvent.findMany({
-    where: { occurredAt: { gte: lookbackStart, lte: now } },
-    orderBy: { occurredAt: 'asc' },
-  });
+  const db = getTenantDb(tenantId);
+  const [rows, settings] = await Promise.all([
+    db.securityEvent.findMany({
+      where: { occurredAt: { gte: lookbackStart, lte: now } },
+      orderBy: { occurredAt: 'asc' },
+    }),
+    db.detectorSetting.findMany(),
+  ]);
 
   const all: DetectorEvent[] = rows.map((r) => ({
     id: r.id,
@@ -51,10 +55,31 @@ export async function runDetection(tenantId: string, now = new Date()): Promise<
 
   const events = all.filter((e) => e.occurredAt >= windowStart);
   const baseline = all.filter((e) => e.occurredAt < windowStart);
-  const ctx: DetectionContext = { tenantId, now, windowStart, windowMinutes: mins, events, baseline };
+
+  const disabled = new Set(settings.filter((s) => !s.enabled).map((s) => s.detectorKey));
+  const params: Record<string, Record<string, number>> = {};
+  for (const s of settings) {
+    if (s.config && typeof s.config === 'object' && !Array.isArray(s.config)) {
+      const out: Record<string, number> = {};
+      for (const [k, v] of Object.entries(s.config as Record<string, unknown>)) {
+        if (typeof v === 'number' && Number.isFinite(v)) out[k] = v;
+      }
+      params[s.detectorKey] = out;
+    }
+  }
+
+  const ctx: DetectionContext = {
+    tenantId,
+    now,
+    windowStart,
+    windowMinutes: mins,
+    events,
+    baseline,
+    params,
+  };
 
   const findings: DetectionResult[] = [];
-  for (const d of detectors) {
+  for (const d of detectors.filter((det) => !disabled.has(det.key))) {
     try {
       findings.push(...d.run(ctx));
     } catch (err) {

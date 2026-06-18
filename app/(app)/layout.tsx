@@ -10,6 +10,7 @@ const NAV: { href: string; label: string; roles: Role[] }[] = [
   { href: '/alerts', label: 'Alerts', roles: ['OWNER', 'ADMIN', 'ANALYST', 'VIEWER'] },
   { href: '/events', label: 'Events', roles: ['OWNER', 'ADMIN', 'ANALYST', 'VIEWER'] },
   { href: '/risk', label: 'Access review', roles: ['OWNER', 'ADMIN'] },
+  { href: '/settings/detection', label: 'Detection rules', roles: ['OWNER', 'ADMIN'] },
   { href: '/settings/team', label: 'Team', roles: ['OWNER', 'ADMIN'] },
   { href: '/settings/api-keys', label: 'API keys', roles: ['OWNER', 'ADMIN'] },
 ];

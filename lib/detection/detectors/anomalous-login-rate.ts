@@ -1,5 +1,6 @@
 import type { Detector, DetectionContext, DetectionResult, DetectorEvent, Severity } from '../types';
 import { zScore } from '../stats';
+import { param } from '../config';
 
 const KEY = 'anomalous-login-rate';
 const FLOOR = 5; // ignore actors with fewer than this many events in the window
@@ -31,6 +32,7 @@ export const anomalousLoginRate: Detector = {
     if (ctx.baseline.length === 0) return [];
     const windowMs = ctx.windowMinutes * 60_000;
     if (windowMs <= 0) return [];
+    const zMin = param(ctx, KEY, 'zThreshold', Z_MEDIUM);
 
     let earliest = Infinity;
     for (const e of ctx.baseline) earliest = Math.min(earliest, e.occurredAt.getTime());
@@ -70,7 +72,7 @@ export const anomalousLoginRate: Detector = {
       const ss = counts.reduce((a, c) => a + (c - m) ** 2, 0) + zeroBuckets * m ** 2;
       const sd = totalBuckets > 1 ? Math.sqrt(ss / (totalBuckets - 1)) : 0;
       const z = zScore(count, m, sd);
-      if (z < Z_MEDIUM) continue;
+      if (z < zMin) continue;
 
       const zClamped = Number.isFinite(z) ? Math.round(z * 10) / 10 : 999;
       const zLabel = Number.isFinite(z) ? zClamped.toString() : '∞';
