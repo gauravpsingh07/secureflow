@@ -1,11 +1,14 @@
+import Link from 'next/link';
 import { requireActor } from '@/lib/auth/session';
 import { getTenantDb } from '@/lib/db/tenant';
-import { parseEventFilters, buildEventWhere, type SearchParams } from '@/lib/events/query';
+import { parseEventFilters, buildEventWhere, eventsHref, type SearchParams } from '@/lib/events/query';
 import { eventTypeEnum } from '@/lib/validation/event';
 import { Card, CardBody } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { EventDetail } from '@/components/events/event-detail';
 
 const TYPE_OPTIONS = eventTypeEnum.options;
+const PAGE_SIZE = 25;
 
 function fmt(d: Date): string {
   return new Date(d).toLocaleString(undefined, {
@@ -20,6 +23,10 @@ function location(country: string | null, city: string | null): string {
   return [city, country].filter(Boolean).join(', ') || '—';
 }
 
+function one(v: string | string[] | undefined): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
+}
+
 export default async function EventsPage({
   searchParams,
 }: {
@@ -29,12 +36,21 @@ export default async function EventsPage({
   const sp = await searchParams;
   const filters = parseEventFilters(sp);
   const where = buildEventWhere(filters);
+  const page = Math.max(1, Number(one(sp.page)) || 1);
+  const selectedId = one(sp.event);
 
-  const events = await getTenantDb(actor.tenantId).securityEvent.findMany({
-    where,
-    orderBy: { occurredAt: 'desc' },
-    take: 50,
-  });
+  const db = getTenantDb(actor.tenantId);
+  const [total, events, selected] = await Promise.all([
+    db.securityEvent.count({ where }),
+    db.securityEvent.findMany({
+      where,
+      orderBy: { occurredAt: 'desc' },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    selectedId ? db.securityEvent.findUnique({ where: { id: selectedId } }) : Promise.resolve(null),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -48,6 +64,15 @@ export default async function EventsPage({
       <Card>
         <CardBody>
           <form method="GET" className="flex flex-wrap items-end gap-3">
+            <div className="grow">
+              <label className="block text-xs font-medium text-slate-600">Search</label>
+              <input
+                name="q"
+                defaultValue={filters.q ?? ''}
+                placeholder="actor, IP, or city…"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
             <div>
               <label className="block text-xs font-medium text-slate-600">Type</label>
               <select
@@ -106,45 +131,88 @@ export default async function EventsPage({
         </CardBody>
       </Card>
 
-      <Card>
-        <CardBody className="overflow-x-auto p-0">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 text-xs text-slate-500 uppercase">
-              <tr>
-                <th className="px-5 py-3 font-medium">Time</th>
-                <th className="px-5 py-3 font-medium">Type</th>
-                <th className="px-5 py-3 font-medium">Actor</th>
-                <th className="px-5 py-3 font-medium">IP</th>
-                <th className="px-5 py-3 font-medium">Location</th>
-                <th className="px-5 py-3 font-medium">Result</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {events.map((e) => (
-                <tr key={e.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3 whitespace-nowrap text-slate-500">{fmt(e.occurredAt)}</td>
-                  <td className="px-5 py-3">
-                    <Badge>{e.type}</Badge>
-                  </td>
-                  <td className="px-5 py-3 text-slate-700">{e.actorEmail ?? '—'}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-slate-500">{e.ip ?? '—'}</td>
-                  <td className="px-5 py-3 text-slate-500">{location(e.country, e.city)}</td>
-                  <td className="px-5 py-3">
-                    <Badge tone={e.success ? 'success' : 'critical'}>
-                      {e.success ? 'OK' : 'Fail'}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {events.length === 0 && (
-            <p className="px-5 py-8 text-center text-sm text-slate-500">
-              No events match these filters.
-            </p>
-          )}
-        </CardBody>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className={selected ? 'lg:col-span-2' : 'lg:col-span-3'}>
+          <Card>
+            <CardBody className="overflow-x-auto p-0">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-slate-100 text-xs text-slate-500 uppercase">
+                  <tr>
+                    <th className="px-5 py-3 font-medium">Time</th>
+                    <th className="px-5 py-3 font-medium">Type</th>
+                    <th className="px-5 py-3 font-medium">Actor</th>
+                    <th className="px-5 py-3 font-medium">IP</th>
+                    <th className="px-5 py-3 font-medium">Location</th>
+                    <th className="px-5 py-3 font-medium">Result</th>
+                    <th className="px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {events.map((e) => (
+                    <tr key={e.id} className={e.id === selectedId ? 'bg-indigo-50' : 'hover:bg-slate-50'}>
+                      <td className="px-5 py-3 whitespace-nowrap text-slate-500">{fmt(e.occurredAt)}</td>
+                      <td className="px-5 py-3">
+                        <Badge>{e.type}</Badge>
+                      </td>
+                      <td className="px-5 py-3 text-slate-700">{e.actorEmail ?? '—'}</td>
+                      <td className="px-5 py-3 font-mono text-xs text-slate-500">{e.ip ?? '—'}</td>
+                      <td className="px-5 py-3 text-slate-500">{location(e.country, e.city)}</td>
+                      <td className="px-5 py-3">
+                        <Badge tone={e.success ? 'success' : 'critical'}>
+                          {e.success ? 'OK' : 'Fail'}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <Link
+                          href={eventsHref(filters, { page: String(page), event: e.id })}
+                          className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {events.length === 0 && (
+                <p className="px-5 py-8 text-center text-sm text-slate-500">
+                  No events match these filters.
+                </p>
+              )}
+            </CardBody>
+          </Card>
+
+          <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
+            <span>
+              Page {page} of {totalPages} · {total} event{total === 1 ? '' : 's'}
+            </span>
+            <div className="flex gap-2">
+              {page > 1 && (
+                <Link
+                  href={eventsHref(filters, { page: String(page - 1) })}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-100"
+                >
+                  ← Prev
+                </Link>
+              )}
+              {page < totalPages && (
+                <Link
+                  href={eventsHref(filters, { page: String(page + 1) })}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-100"
+                >
+                  Next →
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {selected && (
+          <div className="lg:col-span-1">
+            <EventDetail event={selected} closeHref={eventsHref(filters, { page: String(page) })} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
