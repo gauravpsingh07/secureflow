@@ -42,7 +42,11 @@ model, and a phased, commit-by-commit build plan targeting **~56–60 commits**.
   high-entropy), persisted scans (`SecretScan`/`SecretFinding` with RLS), a paste/upload UI +
   findings view (severity, location, masked value, remediation), a GitHub Actions secret-scan
   workflow (source gate + planted-secret demo), and true/false-positive tests. 39 unit tests.
-- ⏳ **Next: Phase 6 — Audit log & access review.**
+- ✅ **Phase 6 — Audit log & access review** (4 commits): an append-only `AuditLog` model +
+  `audit()` helper wired into every mutation (alerts, API keys, team, detectors, approvals,
+  scans), a searchable/paginated audit UI, CSV/JSON export, **DB-level append-only enforcement**
+  (a trigger rejecting UPDATEs), and an integrity integration test.
+- ⏳ **Next: Phase 7 — Polish, demo & deploy** (final phase; will push the total just past 60).
 
 > **Implementation note (deviation from §5 below):** to stay consistent with the existing
 > `helpdesk` codebase, multi-tenancy uses a **flat model** — a `Tenant` plus `User.tenantId`
