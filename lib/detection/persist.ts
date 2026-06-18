@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/client';
 import { getTenantDb } from '@/lib/db/tenant';
+import { publishAlertEvent } from '@/lib/realtime';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import type { AlertSeverity } from '@/lib/generated/prisma/enums';
 import type { DetectionResult, Severity } from './types';
@@ -59,6 +60,13 @@ export async function persistResults(
       });
       alertId = alert.id;
       created++;
+      publishAlertEvent(tenantId, {
+        type: 'alert',
+        alertId: alert.id,
+        detectorKey: r.detectorKey,
+        severity,
+        title: r.title,
+      });
     }
 
     if (r.eventIds.length > 0) {

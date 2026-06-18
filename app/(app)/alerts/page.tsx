@@ -6,6 +6,7 @@ import { severityTone, statusTone, statusLabel } from '@/lib/alerts/display';
 import { setAlertStatusAction } from '@/lib/actions/alerts';
 import { Card, CardBody } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LiveFeed } from '@/components/alerts/live-feed';
 
 function fmt(d: Date): string {
   return new Date(d).toLocaleString(undefined, {
@@ -45,11 +46,14 @@ export default async function AlertsPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Alerts</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Findings from the detection engine, correlated into one row per incident.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Alerts</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Findings from the detection engine, correlated into one row per incident.
+          </p>
+        </div>
+        {canTriage && <LiveFeed />}
       </div>
 
       <Card>
