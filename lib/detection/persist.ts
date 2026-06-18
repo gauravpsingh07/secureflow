@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/client';
 import { getTenantDb } from '@/lib/db/tenant';
 import { publishAlertEvent } from '@/lib/realtime';
+import { sendEmail } from '@/lib/notify/email';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import type { AlertSeverity } from '@/lib/generated/prisma/enums';
 import type { DetectionResult, Severity } from './types';
@@ -67,6 +68,16 @@ export async function persistResults(
         severity,
         title: r.title,
       });
+      await db.notification.create({
+        data: {
+          tenantId,
+          type: 'alert',
+          title: `${severity}: ${r.title}`,
+          body: r.explanation,
+          alertId: alert.id,
+        },
+      });
+      await sendEmail({ to: 'security-team', subject: `[${severity}] ${r.title}`, body: r.explanation });
     }
 
     if (r.eventIds.length > 0) {

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { requireActor } from '@/lib/auth/session';
 import { signOutAction } from '@/lib/actions/auth';
 import { prisma } from '@/lib/db/client';
+import { getTenantDb } from '@/lib/db/tenant';
 import type { Role } from '@/lib/auth/rbac';
 
 const NAV: { href: string; label: string; roles: Role[] }[] = [
@@ -22,6 +23,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     where: { id: actor.tenantId },
     select: { name: true },
   });
+  const unread = await getTenantDb(actor.tenantId).notification.count({ where: { readAt: null } });
   const links = NAV.filter((n) => n.roles.includes(actor.role));
 
   return (
@@ -42,6 +44,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               {l.label}
             </Link>
           ))}
+          <Link
+            href="/notifications"
+            className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            <span>Notifications</span>
+            {unread > 0 && (
+              <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-semibold text-white">
+                {unread}
+              </span>
+            )}
+          </Link>
         </nav>
 
         <div className="mt-auto border-t border-slate-200 pt-3">

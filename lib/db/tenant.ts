@@ -13,6 +13,7 @@ const TENANT_MODELS = new Set([
   'Alert',
   'DetectorSetting',
   'ApprovalRequest',
+  'Notification',
 ]);
 
 // Operations whose `where` clause we constrain to the active tenant. Thanks to

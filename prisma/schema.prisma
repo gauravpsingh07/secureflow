@@ -37,6 +37,7 @@ model Tenant {
   alerts           Alert[]
   detectorSettings DetectorSetting[]
   approvalRequests ApprovalRequest[]
+  notifications    Notification[]
 }
 
 model User {
@@ -215,4 +216,20 @@ model ApprovalRequest {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
+}
+
+// A workspace-level in-app notification (e.g. a new alert fired).
+model Notification {
+  id        String    @id @default(cuid())
+  tenantId  String
+  type      String
+  title     String
+  body      String
+  alertId   String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, readAt])
 }
