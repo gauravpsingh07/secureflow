@@ -30,8 +30,10 @@ model Tenant {
   slug      String   @unique
   createdAt DateTime @default(now())
 
-  users   User[]
-  invites Invite[]
+  users          User[]
+  invites        Invite[]
+  apiKeys        ApiKey[]
+  securityEvents SecurityEvent[]
 }
 
 model User {
@@ -64,4 +66,59 @@ model Invite {
 
   @@unique([tenantId, email])
   @@index([tenantId])
+}
+
+// Types of security telemetry the platform ingests and reasons about.
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  LOGOUT
+  PASSWORD_RESET
+  MFA_CHALLENGE
+  API_REQUEST
+  PERMISSION_CHANGE
+}
+
+// An ingestion credential. The raw key is shown once at creation; we persist
+// only its SHA-256 hash. `prefix` is a non-secret display label (e.g. "sf_AbC1").
+model ApiKey {
+  id             String    @id @default(cuid())
+  tenantId       String
+  name           String
+  hashedKey      String    @unique
+  prefix         String
+  rateLimitPerMin Int      @default(600)
+  lastUsedAt     DateTime?
+  revokedAt      DateTime?
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// A normalized security/login event. `raw` keeps the original payload; the
+// promoted columns power filtering and detection.
+model SecurityEvent {
+  id         String            @id @default(cuid())
+  tenantId   String
+  type       SecurityEventType
+  actorEmail String?
+  ip         String?
+  country    String?
+  city       String?
+  latitude   Float?
+  longitude  Float?
+  userAgent  String?
+  success    Boolean           @default(true)
+  raw        Json?
+  occurredAt DateTime          @default(now())
+  createdAt  DateTime          @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, occurredAt])
+  @@index([tenantId, type])
+  @@index([tenantId, actorEmail])
 }

@@ -5,7 +5,7 @@ import { prisma } from './client';
  * without a tenant constraint. New tenant-scoped models (events, alerts, audit,
  * api keys, …) are added here as later phases introduce them.
  */
-const TENANT_MODELS = new Set(['User', 'Invite']);
+const TENANT_MODELS = new Set(['User', 'Invite', 'ApiKey', 'SecurityEvent']);
 
 // Operations whose `where` clause we constrain to the active tenant. Thanks to
 // Prisma's extended-unique-where, tenantId can be added even to by-id ops.
