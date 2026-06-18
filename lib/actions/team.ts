@@ -9,6 +9,7 @@ import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { signIn } from '@/auth';
 import { generateInviteToken } from '@/lib/tenant/invite';
+import { audit } from '@/lib/audit';
 
 const inviteSchema = z.object({
   email: z.email(),
@@ -48,6 +49,14 @@ export async function inviteMemberAction(
   } catch {
     return { error: 'That email is already invited.' };
   }
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'member.invite',
+    target: email,
+    metadata: { role: parsed.data.role },
+  });
 
   revalidatePath('/settings/team');
   return { ok: `Invitation created for ${email}.` };
@@ -59,6 +68,13 @@ export async function revokeInviteAction(formData: FormData): Promise<void> {
   const id = String(formData.get('inviteId') ?? '');
   if (!id) return;
   await getTenantDb(actor.tenantId).invite.deleteMany({ where: { id } });
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'invite.revoke',
+    target: id,
+  });
   revalidatePath('/settings/team');
 }
 
@@ -93,7 +109,7 @@ export async function acceptInviteAction(
   if (existing) return { error: 'An account with that email already exists.' };
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
-  await prisma.$transaction([
+  const [newUser] = await prisma.$transaction([
     prisma.user.create({
       data: {
         email: invite.email,
@@ -105,6 +121,14 @@ export async function acceptInviteAction(
     }),
     prisma.invite.update({ where: { id: invite.id }, data: { acceptedAt: new Date() } }),
   ]);
+  await audit({
+    tenantId: invite.tenantId,
+    actorId: newUser.id,
+    actorName: parsed.data.name,
+    action: 'member.join',
+    target: invite.email,
+    metadata: { role: invite.role },
+  });
 
   try {
     await signIn('credentials', {

@@ -39,6 +39,7 @@ model Tenant {
   approvalRequests ApprovalRequest[]
   notifications    Notification[]
   secretScans      SecretScan[]
+  auditLogs        AuditLog[]
 }
 
 model User {
@@ -265,4 +266,22 @@ model SecretFinding {
   scan SecretScan @relation(fields: [scanId], references: [id], onDelete: Cascade)
 
   @@index([scanId])
+}
+
+// Append-only record of every sensitive action. Updates/deletes are blocked at
+// the database in the `*_audit_immutable` migration.
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  actorId   String?
+  actorName String?
+  action    String
+  target    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, action])
 }

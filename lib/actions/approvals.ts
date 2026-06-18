@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { isRiskyAction, type RiskyActionKey } from '@/lib/approvals/catalog';
+import { audit } from '@/lib/audit';
 import type { TenantDb } from '@/lib/db/tenant';
 
 /** File a request for a risky action. Any non-viewer can request; an owner approves. */
@@ -21,6 +22,13 @@ export async function requestApprovalAction(formData: FormData): Promise<void> {
       requestedById: actor.userId,
       requestedByName: actor.name,
     },
+  });
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'approval.request',
+    target: action,
   });
   revalidatePath('/settings/approvals');
 }
@@ -48,6 +56,14 @@ export async function decideApprovalAction(formData: FormData): Promise<void> {
       decidedByName: actor.name,
       decidedAt: new Date(),
     },
+  });
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'approval.decide',
+    target: request.action,
+    metadata: { decision },
   });
   revalidatePath('/settings/approvals');
   revalidatePath('/alerts');

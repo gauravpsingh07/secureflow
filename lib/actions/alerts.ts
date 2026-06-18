@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
+import { audit } from '@/lib/audit';
 
 const statusSchema = z.enum(['OPEN', 'ACKNOWLEDGED', 'RESOLVED']);
 
@@ -17,6 +18,14 @@ export async function setAlertStatusAction(formData: FormData): Promise<void> {
   await getTenantDb(actor.tenantId).alert.updateMany({
     where: { id },
     data: { status: parsed.data },
+  });
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'alert.status',
+    target: id,
+    metadata: { status: parsed.data },
   });
   revalidatePath('/alerts');
   revalidatePath(`/alerts/${id}`);

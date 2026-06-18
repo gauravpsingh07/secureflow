@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { scan } from '@/lib/scanner/rules';
+import { audit } from '@/lib/audit';
 import type { Severity } from '@/lib/scanner/types';
 import type { AlertSeverity } from '@/lib/generated/prisma/enums';
 
@@ -49,6 +50,14 @@ export async function scanAction(formData: FormData): Promise<void> {
         })),
       },
     },
+  });
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'secret.scan',
+    target: source,
+    metadata: { findingCount: findings.length },
   });
   redirect(`/scanner/${created.id}`);
 }

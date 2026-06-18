@@ -5,6 +5,7 @@ import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { DETECTOR_PARAMS } from '@/lib/detection/config';
 import { detectors } from '@/lib/detection/registry';
+import { audit } from '@/lib/audit';
 import type { Prisma } from '@/lib/generated/prisma/client';
 
 /** Enable/disable a detector and persist its threshold overrides for the tenant. */
@@ -31,6 +32,14 @@ export async function saveDetectorSettingAction(formData: FormData): Promise<voi
       config: config as Prisma.InputJsonValue,
     },
     update: { enabled, config: config as Prisma.InputJsonValue },
+  });
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'detector.update',
+    target: key,
+    metadata: { enabled, config },
   });
   revalidatePath('/settings/detection');
 }

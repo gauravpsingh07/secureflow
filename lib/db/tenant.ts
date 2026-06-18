@@ -15,6 +15,7 @@ const TENANT_MODELS = new Set([
   'ApprovalRequest',
   'Notification',
   'SecretScan',
+  'AuditLog',
 ]);
 
 // Operations whose `where` clause we constrain to the active tenant. Thanks to

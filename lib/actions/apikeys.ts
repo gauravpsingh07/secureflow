@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { getTenantDb } from '@/lib/db/tenant';
 import { requireRole } from '@/lib/auth/session';
 import { generateApiKey } from '@/lib/apikey';
+import { audit } from '@/lib/audit';
 
 const createSchema = z.object({ name: z.string().min(1, 'Name is required').max(60) });
 
@@ -31,6 +32,13 @@ export async function createApiKeyAction(
       createdBy: actor.userId,
     },
   });
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'apikey.create',
+    target: prefix,
+  });
 
   revalidatePath('/settings/api-keys');
   return { rawKey: raw, prefix };
@@ -44,6 +52,13 @@ export async function revokeApiKeyAction(formData: FormData): Promise<void> {
   await getTenantDb(actor.tenantId).apiKey.updateMany({
     where: { id, revokedAt: null },
     data: { revokedAt: new Date() },
+  });
+  await audit({
+    tenantId: actor.tenantId,
+    actorId: actor.userId,
+    actorName: actor.name,
+    action: 'apikey.revoke',
+    target: id,
   });
   revalidatePath('/settings/api-keys');
 }
