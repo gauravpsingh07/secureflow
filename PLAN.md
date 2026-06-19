@@ -46,7 +46,12 @@ model, and a phased, commit-by-commit build plan targeting **~56–60 commits**.
   `audit()` helper wired into every mutation (alerts, API keys, team, detectors, approvals,
   scans), a searchable/paginated audit UI, CSV/JSON export, **DB-level append-only enforcement**
   (a trigger rejecting UPDATEs), and an integrity integration test.
-- ⏳ **Next: Phase 7 — Polish, demo & deploy** (final phase; will push the total just past 60).
+- ✅ **Phase 7 — Polish, demo & deploy** (6 commits): the Northwind demo seed (week of traffic
+  + live incidents → real alerts + a secret scan), public read-only demo mode, a landing page,
+  loading/error/not-found states + a11y, Vercel + Neon deploy config (auto-migrate build, cron
+  auth), and final docs (README, `docs/architecture.md`, `docs/threat-model.md`, `docs/deploy.md`).
+- 🎉 **All 8 phases complete** (~69 commits). Verified green: typecheck, lint, 39 unit tests,
+  detector eval at 100% precision/recall, production build. Integration + e2e run in CI.
 
 > **Implementation note (deviation from §5 below):** to stay consistent with the existing
 > `helpdesk` codebase, multi-tenancy uses a **flat model** — a `Tenant` plus `User.tenantId`
