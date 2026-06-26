@@ -18,6 +18,7 @@ const NAV: { href: string; label: string; roles: Role[] }[] = [
   { href: '/settings/audit', label: 'Audit log', roles: ['OWNER', 'ADMIN'] },
   { href: '/settings/team', label: 'Team', roles: ['OWNER', 'ADMIN'] },
   { href: '/settings/api-keys', label: 'API keys', roles: ['OWNER', 'ADMIN'] },
+  { href: '/settings/security', label: 'Security', roles: ['OWNER', 'ADMIN', 'ANALYST', 'VIEWER'] },
 ];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
