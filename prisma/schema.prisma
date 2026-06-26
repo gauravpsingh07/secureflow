@@ -40,6 +40,8 @@ model Tenant {
   notifications    Notification[]
   secretScans      SecretScan[]
   auditLogs        AuditLog[]
+  webhookEndpoints WebhookEndpoint[]
+  webhookDeliveries WebhookDelivery[]
 }
 
 model User {
@@ -286,4 +288,50 @@ model AuditLog {
 
   @@index([tenantId, createdAt])
   @@index([tenantId, action])
+}
+
+enum WebhookStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// A tenant-configured outbound webhook target. `secret` signs deliveries (HMAC).
+model WebhookEndpoint {
+  id        String   @id @default(cuid())
+  tenantId  String
+  url       String
+  secret    String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([tenantId])
+}
+
+// One delivery attempt-set for an event to an endpoint. `eventKey` makes enqueue
+// idempotent; retries reuse the same row (and the same delivery id) with backoff.
+model WebhookDelivery {
+  id             String        @id @default(cuid())
+  tenantId       String
+  endpointId     String
+  eventType      String
+  eventKey       String
+  payload        Json
+  status         WebhookStatus @default(PENDING)
+  attempts       Int           @default(0)
+  lastStatusCode Int?
+  lastError      String?
+  nextAttemptAt  DateTime      @default(now())
+  deliveredAt    DateTime?
+  createdAt      DateTime      @default(now())
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([endpointId, eventKey])
+  @@index([tenantId])
+  @@index([status, nextAttemptAt])
 }

@@ -16,6 +16,8 @@ const TENANT_MODELS = new Set([
   'Notification',
   'SecretScan',
   'AuditLog',
+  'WebhookEndpoint',
+  'WebhookDelivery',
 ]);
 
 // Operations whose `where` clause we constrain to the active tenant. Thanks to
