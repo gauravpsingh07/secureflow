@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '@/lib/db/client';
 import { getTenantDb } from '@/lib/db/tenant';
-import { withTenantRls } from '@/lib/db/rls';
 
 // Hits a real Postgres (DATABASE_URL). Run with `pnpm test:int`.
 // Proves both isolation layers: the application query-scope (lib/db/tenant.ts)
-// and the Postgres RLS policies (lib/db/rls.ts + the *_rls migration).
+// and the Postgres RLS policies (the *_rls migrations).
 
 const SUFFIX = `it-${Date.now()}`;
+const RLS_ROLE = 'sf_rls_test';
 let tenantA = '';
 let userBId = '';
 
@@ -30,6 +30,14 @@ beforeAll(async () => {
   });
   tenantA = a.id;
   userBId = b.users[0].id;
+
+  // A non-superuser role. Superusers (e.g. the default `postgres` user) bypass
+  // RLS even with FORCE, so RLS is verified by scoping queries to this role.
+  await prisma.$executeRawUnsafe(
+    `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${RLS_ROLE}') THEN CREATE ROLE ${RLS_ROLE} NOLOGIN NOSUPERUSER; END IF; END $$;`,
+  );
+  await prisma.$executeRawUnsafe(`GRANT USAGE ON SCHEMA public TO ${RLS_ROLE}`);
+  await prisma.$executeRawUnsafe(`GRANT SELECT ON "User" TO ${RLS_ROLE}`);
 });
 
 afterAll(async () => {
@@ -58,20 +66,25 @@ describe('tenant isolation — application layer', () => {
   });
 });
 
+// Run a query as the restricted role with the tenant GUC set, so RLS applies.
+async function rowsUnderRls(predicate: 'other-tenant' | 'own-tenant'): Promise<number> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(`SET LOCAL ROLE ${RLS_ROLE}`);
+    await tx.$executeRaw`SELECT set_config('app.current_tenant', ${tenantA}, true)`;
+    const rows =
+      predicate === 'other-tenant'
+        ? await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "User" WHERE id = ${userBId}`
+        : await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "User" WHERE "tenantId" = ${tenantA}`;
+    return rows.length;
+  });
+}
+
 describe('tenant isolation — RLS layer', () => {
-  it('hides another tenant row when the GUC is set', async () => {
-    const visibleB = await withTenantRls(tenantA, async (tx) => {
-      const rows = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "User" WHERE id = ${userBId}`;
-      return rows.length;
-    });
-    expect(visibleB).toBe(0);
+  it('hides another tenant row from a non-owner role', async () => {
+    expect(await rowsUnderRls('other-tenant')).toBe(0);
   });
 
-  it('still shows the active tenant rows when the GUC is set', async () => {
-    const visibleOwn = await withTenantRls(tenantA, async (tx) => {
-      const rows = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "User" WHERE "tenantId" = ${tenantA}`;
-      return rows.length;
-    });
-    expect(visibleOwn).toBe(1);
+  it('still shows the active tenant rows', async () => {
+    expect(await rowsUnderRls('own-tenant')).toBe(1);
   });
 });
