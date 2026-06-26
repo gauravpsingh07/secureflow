@@ -43,6 +43,7 @@
 | `ApprovalRequest` | Owner sign-off for risky actions |
 | `Notification` | In-app alerts |
 | `SecretScan`, `SecretFinding` | Secret-scan runs + masked findings |
+| `WebhookEndpoint`, `WebhookDelivery` | Outbound webhooks; HMAC-signed, idempotent, retried |
 | `AuditLog` | Append-only, DB-enforced action history |
 
 ## Isolation

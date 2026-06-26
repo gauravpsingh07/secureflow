@@ -2,6 +2,7 @@ import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/db/client';
 import { generateApiKey } from '../lib/apikey';
+import { generateWebhookSecret } from '../lib/webhooks/sign';
 import { runDetection } from '../lib/detection/run';
 import { scan } from '../lib/scanner/rules';
 import { audit } from '../lib/audit';
@@ -134,6 +135,15 @@ async function main(): Promise<void> {
           remediation: f.remediation,
         })),
       },
+    },
+  });
+
+  // A sample webhook endpoint (no deliveries yet — they appear as new alerts fire).
+  await prisma.webhookEndpoint.create({
+    data: {
+      tenantId: tenant.id,
+      url: 'https://example.com/webhooks/secureflow',
+      secret: generateWebhookSecret(),
     },
   });
 

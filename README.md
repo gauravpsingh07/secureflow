@@ -31,6 +31,8 @@ login, credential stuffing) that fire real alerts, and a secret scan with plante
   admin approval workflow for risky actions, and an **append-only audit log enforced by a
   database trigger**.
 - **Ingestion API** — a rate-limited, API-key-authenticated `POST /api/v1/events`.
+- **Outbound webhooks** — alerts POSTed to your systems, **HMAC-signed**, idempotent, and
+  **retried with exponential backoff**, with a delivery log.
 
 ## Tech stack
 
