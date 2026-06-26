@@ -1,4 +1,5 @@
 import { runDetectionAllTenants } from '@/lib/detection/run';
+import { processPendingDeliveries } from '@/lib/webhooks/deliver';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -18,8 +19,9 @@ function authorized(req: Request): boolean {
 async function handle(req: Request): Promise<Response> {
   if (!authorized(req)) return new Response('Unauthorized', { status: 401 });
   const summaries = await runDetectionAllTenants();
+  const webhook = await processPendingDeliveries();
   const created = summaries.reduce((a, s) => a + s.created, 0);
-  return Response.json({ ok: true, tenants: summaries.length, newAlerts: created, summaries });
+  return Response.json({ ok: true, tenants: summaries.length, newAlerts: created, webhook, summaries });
 }
 
 export const GET = handle;
