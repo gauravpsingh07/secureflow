@@ -31,7 +31,7 @@ authenticated and authorized.
 
 | STRIDE | Threat | Mitigation |
 |--------|--------|------------|
-| **Spoofing** | Forged identity / session | NextAuth (Auth.js) with signed JWT sessions; bcrypt password hashing; middleware gates every non-public route. |
+| **Spoofing** | Forged identity / session | NextAuth (Auth.js) with signed JWT sessions; bcrypt password hashing; optional **TOTP two-factor auth** (RFC 6238); middleware gates every non-public route. |
 | **Spoofing** | Forged ingestion calls | API keys are random, stored only as SHA-256 hashes, verified per request, and revocable. |
 | **Tampering** | Cross-tenant data access | Two-layer isolation: an application query-scoping layer (`lib/db/tenant.ts`) **and** Postgres Row-Level Security keyed on `app.current_tenant`. |
 | **Tampering** | Altering history | The audit log is append-only — a database trigger rejects `UPDATE`s. |
@@ -54,4 +54,4 @@ authenticated and authorized.
 - **Geo is trusted from the event payload**, not derived from IP — a spoofed payload could
   evade impossible-travel. Enrich via a GeoIP database in production.
 - **In-process rate limiter and realtime bus** don't span instances — move to Redis to scale out.
-- **No MFA** on member accounts yet; a natural next step for the auth layer.
+- **MFA is optional and TOTP-only** — enforcing it per-tenant and adding WebAuthn/passkeys would harden it further.

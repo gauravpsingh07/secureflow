@@ -27,8 +27,9 @@ login, credential stuffing) that fire real alerts, and a secret scan with plante
   layer and Postgres Row-Level Security.
 - **Live console** — realtime alert feed (SSE), posture dashboard, alerts triage workflow,
   events explorer, and an access-review/risk page.
-- **Governed & auditable** — RBAC, tunable detection rules, an admin approval workflow for risky
-  actions, and an **append-only audit log enforced by a database trigger**.
+- **Governed & auditable** — RBAC, optional **TOTP two-factor auth**, tunable detection rules, an
+  admin approval workflow for risky actions, and an **append-only audit log enforced by a
+  database trigger**.
 - **Ingestion API** — a rate-limited, API-key-authenticated `POST /api/v1/events`.
 
 ## Tech stack
