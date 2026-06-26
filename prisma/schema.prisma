@@ -49,6 +49,8 @@ model User {
   passwordHash String
   tenantId     String
   role         Role     @default(VIEWER)
+  mfaEnabled   Boolean  @default(false)
+  mfaSecret    String?
   createdAt    DateTime @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
