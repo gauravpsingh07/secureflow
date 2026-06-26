@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '@/lib/db/client';
 import { getTenantDb } from '@/lib/db/tenant';
+import { withTenantRls } from '@/lib/db/rls';
 
 // Hits a real Postgres (DATABASE_URL). Run with `pnpm test:int`.
 // Proves both isolation layers: the application query-scope (lib/db/tenant.ts)
@@ -66,11 +67,11 @@ describe('tenant isolation — application layer', () => {
   });
 });
 
-// Run a query as the restricted role with the tenant GUC set, so RLS applies.
+// withTenantRls sets the tenant GUC; running under the restricted role inside it
+// makes the RLS policies actually apply (the production enforcement path).
 async function rowsUnderRls(predicate: 'other-tenant' | 'own-tenant'): Promise<number> {
-  return prisma.$transaction(async (tx) => {
+  return withTenantRls(tenantA, async (tx) => {
     await tx.$executeRawUnsafe(`SET LOCAL ROLE ${RLS_ROLE}`);
-    await tx.$executeRaw`SELECT set_config('app.current_tenant', ${tenantA}, true)`;
     const rows =
       predicate === 'other-tenant'
         ? await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "User" WHERE id = ${userBId}`
