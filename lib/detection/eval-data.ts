@@ -94,4 +94,19 @@ export const evalScenarios: EvalScenario[] = [
     context: ctx(Array.from({ length: 3 }, () => ev({ type: 'LOGIN_FAILURE', actorEmail: 'alice@x', ip: '10.0.0.1' }))),
     expected: [],
   },
+  {
+    name: 'account takeover (failures then success)',
+    context: ctx([
+      ...Array.from({ length: 6 }, () =>
+        ev({ type: 'LOGIN_FAILURE', actorEmail: 'erin@x', ip: '203.0.113.99', occurredAt: new Date(NOW.getTime() - 5 * MIN) }),
+      ),
+      ev({ type: 'LOGIN_SUCCESS', actorEmail: 'erin@x', ip: '203.0.113.99', occurredAt: NOW }),
+    ]),
+    expected: ['account-takeover'],
+  },
+  {
+    name: 'privilege escalation (rapid permission changes)',
+    context: ctx(Array.from({ length: 4 }, () => ev({ type: 'PERMISSION_CHANGE', actorEmail: 'frank@x' }))),
+    expected: ['privilege-escalation'],
+  },
 ];

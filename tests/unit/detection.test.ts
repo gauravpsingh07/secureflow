@@ -5,6 +5,8 @@ import { anomalousLoginRate } from '@/lib/detection/detectors/anomalous-login-ra
 import { impossibleTravel } from '@/lib/detection/detectors/impossible-travel';
 import { newDeviceIp } from '@/lib/detection/detectors/new-device-ip';
 import { credentialStuffing } from '@/lib/detection/detectors/credential-stuffing';
+import { accountTakeover } from '@/lib/detection/detectors/account-takeover';
+import { privilegeEscalation } from '@/lib/detection/detectors/privilege-escalation';
 
 const NOW = new Date('2026-06-18T12:00:00.000Z');
 const WINDOW = 15;
@@ -119,5 +121,40 @@ describe('credentialStuffing', () => {
     const res = credentialStuffing.run(ctx(events));
     expect(res).toHaveLength(1);
     expect(res[0].evidence.distinctAccounts).toBe(6);
+  });
+});
+
+describe('accountTakeover', () => {
+  it('fires when failures are followed by a success', () => {
+    const events = [
+      ...Array.from({ length: 6 }, () =>
+        ev({ type: 'LOGIN_FAILURE', actorEmail: 'a@x', occurredAt: new Date(NOW.getTime() - 5 * MIN) }),
+      ),
+      ev({ type: 'LOGIN_SUCCESS', actorEmail: 'a@x', occurredAt: NOW }),
+    ];
+    const res = accountTakeover.run(ctx(events));
+    expect(res).toHaveLength(1);
+    expect(res[0].severity).toBe('high');
+  });
+
+  it('does not fire on failures alone', () => {
+    const events = Array.from({ length: 6 }, () => ev({ type: 'LOGIN_FAILURE', actorEmail: 'a@x' }));
+    expect(accountTakeover.run(ctx(events))).toHaveLength(0);
+  });
+});
+
+describe('privilegeEscalation', () => {
+  it('fires on clustered permission changes', () => {
+    const events = Array.from({ length: 4 }, () =>
+      ev({ type: 'PERMISSION_CHANGE', actorEmail: 'a@x' }),
+    );
+    const res = privilegeEscalation.run(ctx(events));
+    expect(res).toHaveLength(1);
+    expect(res[0].evidence.changes).toBe(4);
+  });
+
+  it('does not fire below the threshold', () => {
+    const events = Array.from({ length: 2 }, () => ev({ type: 'PERMISSION_CHANGE', actorEmail: 'a@x' }));
+    expect(privilegeEscalation.run(ctx(events))).toHaveLength(0);
   });
 });
