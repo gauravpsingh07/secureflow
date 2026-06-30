@@ -30,13 +30,17 @@ route (`/api/jobs/run`) drives passes; `lib/detection/persist.ts` writes results
 | `impossible-travel` | Account sharing / takeover | Two successful logins whose distance ÷ time implies > 900 km/h | high → critical by speed |
 | `new-device-ip` | First-seen access | Known account logs in from an IP/device never seen in baseline | low → medium |
 | `anomalous-login-rate` | Volume outlier | Window auth count is a high **z-score** vs the actor's per-window baseline | medium → critical by z |
+| `account-takeover` | Brute force that landed | ≥ 5 failed logins **followed by a success** for one actor | high → critical by failure count |
+| `privilege-escalation` | Rapid access grants | ≥ 3 `PERMISSION_CHANGE` events by one actor in the window | medium → critical by count |
 
-### Why these five
+### Why these seven
 
 They cover the common account-attack surface: high-volume single-target (spike), high-volume
 multi-target (stuffing), geographic impossibility (travel), unfamiliar origin (new device/IP),
-and "something is statistically off" (anomalous rate). The first four are crisp rules; the
-fifth is statistical and catches what fixed thresholds miss.
+statistical outliers (anomalous rate), a brute force that **succeeded** (account takeover), and
+rapid access grants (privilege escalation). Most are crisp rules; the anomalous-rate detector is
+statistical and catches what fixed thresholds miss. Together they span both failed *and*
+successful compromise, plus post-access abuse.
 
 ## Explainability & scoring
 

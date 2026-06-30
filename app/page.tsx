@@ -4,7 +4,7 @@ import { isDemoMode } from '@/lib/demo';
 const FEATURES = [
   {
     title: 'Explainable threat detection',
-    body: 'Failed-login spikes, anomalous rates (z-score), impossible travel, new device/IP, and credential stuffing — every alert says exactly why it fired.',
+    body: 'Seven detectors — failed-login spikes, anomalous rates (z-score), impossible travel, new device/IP, credential stuffing, account takeover, and privilege escalation — and every alert says exactly why it fired.',
   },
   {
     title: 'Secret scanner',

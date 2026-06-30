@@ -18,9 +18,10 @@ login, credential stuffing) that fire real alerts, and a secret scan with plante
 
 ## Features
 
-- **Explainable threat detection** — failed-login spikes, anomalous login rate (z-score),
-  impossible travel, new device/IP, credential stuffing. Every alert stores *why* it fired and
-  the evidence behind it. Scored against a labeled dataset at 100% precision/recall (`pnpm eval`).
+- **Explainable threat detection** — seven detectors: failed-login spikes, anomalous login rate
+  (z-score), impossible travel, new device/IP, credential stuffing, account takeover (brute force
+  that landed), and privilege escalation. Every alert stores *why* it fired and the evidence
+  behind it. Scored against a labeled dataset at 100% precision/recall (`pnpm eval`).
 - **Secret / API-key scanner** — regex + Shannon-entropy detection for AWS, GitHub, Stripe,
   Slack, GCP, private keys, JWTs, and generic high-entropy secrets, with severity and remediation.
 - **Multi-tenant by design** — isolation enforced in two layers: an application query-scoping
