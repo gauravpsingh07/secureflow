@@ -24,4 +24,10 @@ export const DETECTOR_PARAMS: Record<string, ParamSpec[]> = {
     { name: 'zThreshold', label: 'Z-score threshold', default: 3, min: 1, max: 10 },
   ],
   'new-device-ip': [],
+  'account-takeover': [
+    { name: 'minFailures', label: 'Min failures before success', default: 5, min: 2, max: 100 },
+  ],
+  'privilege-escalation': [
+    { name: 'minChanges', label: 'Min permission changes', default: 3, min: 2, max: 100 },
+  ],
 };

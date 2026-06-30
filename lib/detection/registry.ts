@@ -4,6 +4,8 @@ import { anomalousLoginRate } from './detectors/anomalous-login-rate';
 import { impossibleTravel } from './detectors/impossible-travel';
 import { newDeviceIp } from './detectors/new-device-ip';
 import { credentialStuffing } from './detectors/credential-stuffing';
+import { accountTakeover } from './detectors/account-takeover';
+import { privilegeEscalation } from './detectors/privilege-escalation';
 
 /**
  * The active detectors. Each is a pure function of the detection context, so the
@@ -15,4 +17,6 @@ export const detectors: Detector[] = [
   impossibleTravel,
   newDeviceIp,
   credentialStuffing,
+  accountTakeover,
+  privilegeEscalation,
 ];
