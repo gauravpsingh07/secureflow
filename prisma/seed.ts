@@ -71,6 +71,15 @@ function buildEvents(now: number): EventRow[] {
   ['amy', 'ben', 'cleo', 'dan', 'eve', 'finn', 'gail'].forEach((name, i) => {
     events.push(ev('LOGIN_FAILURE', now - 8 * MIN + i * 20_000, { actorEmail: `${name}@northwind.test`, ip: '198.18.0.7', ...GEOS.ber }));
   });
+  // 4) Account takeover — failed logins then a success for one account.
+  for (let i = 0; i < 6; i++) {
+    events.push(ev('LOGIN_FAILURE', now - 7 * MIN + i * 15_000, { actorEmail: 'dave@northwind.test', ip: '198.18.0.99', ...GEOS.ber, userAgent: 'python-requests/2.31' }));
+  }
+  events.push(ev('LOGIN_SUCCESS', now - MIN, { actorEmail: 'dave@northwind.test', ip: '198.18.0.99', ...GEOS.ber, userAgent: 'python-requests/2.31', raw: { scenario: 'account-takeover' } as Prisma.InputJsonValue }));
+  // 5) Privilege escalation — rapid permission changes by one actor.
+  for (let i = 0; i < 4; i++) {
+    events.push(ev('PERMISSION_CHANGE', now - 6 * MIN + i * 30_000, { actorEmail: 'alice@northwind.test', ip: '10.0.0.5', raw: { scenario: 'privilege-escalation' } as Prisma.InputJsonValue }));
+  }
 
   return events;
 }

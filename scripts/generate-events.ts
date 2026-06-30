@@ -179,11 +179,60 @@ async function postBatch(events: Ev[]): Promise<void> {
   }
 }
 
+/** Failed logins for one account, then a success — the brute force landed. */
+function accountTakeover(now: number): Ev[] {
+  const events: Ev[] = [];
+  const target = 'dave@northwind.test';
+  const ip = '198.18.0.99';
+  const start = now - 7 * MINUTE;
+  for (let i = 0; i < 6; i++) {
+    events.push({
+      type: 'LOGIN_FAILURE',
+      actorEmail: target,
+      ip,
+      ...GEOS.ber,
+      userAgent: 'python-requests/2.31',
+      occurredAt: iso(start + i * 15_000),
+      raw: { scenario: 'account-takeover' },
+    });
+  }
+  events.push({
+    type: 'LOGIN_SUCCESS',
+    actorEmail: target,
+    ip,
+    ...GEOS.ber,
+    userAgent: 'python-requests/2.31',
+    occurredAt: iso(now - MINUTE),
+    raw: { scenario: 'account-takeover' },
+  });
+  return events;
+}
+
+/** Rapid permission changes by one actor — privilege escalation. */
+function privilegeEscalation(now: number): Ev[] {
+  const events: Ev[] = [];
+  const start = now - 6 * MINUTE;
+  for (let i = 0; i < 4; i++) {
+    events.push({
+      type: 'PERMISSION_CHANGE',
+      actorEmail: 'alice@northwind.test',
+      ip: '10.0.0.5',
+      occurredAt: iso(start + i * 30_000),
+      raw: { scenario: 'privilege-escalation' },
+    });
+  }
+  return events;
+}
+
 async function main(): Promise<void> {
   const now = Date.now();
-  const all = [...baselineTraffic(now), ...bruteForceBurst(now), ...impossibleTravel(now)].sort(
-    (a, b) => (a.occurredAt ?? '').localeCompare(b.occurredAt ?? ''),
-  );
+  const all = [
+    ...baselineTraffic(now),
+    ...bruteForceBurst(now),
+    ...impossibleTravel(now),
+    ...accountTakeover(now),
+    ...privilegeEscalation(now),
+  ].sort((a, b) => (a.occurredAt ?? '').localeCompare(b.occurredAt ?? ''));
 
   console.log(`Posting ${all.length} events to ${BASE_URL} …`);
   const CHUNK = 200;
@@ -191,7 +240,7 @@ async function main(): Promise<void> {
     await postBatch(all.slice(i, i + CHUNK));
     process.stdout.write('.');
   }
-  console.log(`\nDone. Ingested ${all.length} events (incl. a brute-force burst and an impossible-travel login).`);
+  console.log(`\nDone. Ingested ${all.length} events (incl. brute-force, impossible-travel, account-takeover, and privilege-escalation scenarios).`);
 }
 
 main().catch((err) => {
