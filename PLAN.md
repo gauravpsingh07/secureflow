@@ -50,8 +50,55 @@ model, and a phased, commit-by-commit build plan targeting **~56–60 commits**.
   + live incidents → real alerts + a secret scan), public read-only demo mode, a landing page,
   loading/error/not-found states + a11y, Vercel + Neon deploy config (auto-migrate build, cron
   auth), and final docs (README, `docs/architecture.md`, `docs/threat-model.md`, `docs/deploy.md`).
-- 🎉 **All 8 phases complete** (~69 commits). Verified green: typecheck, lint, 39 unit tests,
+- 🎉 **All 8 phases complete** (~69 commits). Verified green: typecheck, lint, unit tests,
   detector eval at 100% precision/recall, production build. Integration + e2e run in CI.
+
+### Post-completion additions (all shipped, CI green)
+
+- ✅ **Published to GitHub** — public repo at **https://github.com/gauravpsingh07/secureflow**
+  (owner `gauravpsingh07`). GitHub push protection initially blocked the planted demo Stripe key
+  in the secret-scan workflow; fixed by assembling the fake key at runtime and scrubbing the
+  literal from all history (`git filter-branch`). Lesson: never commit a contiguous
+  `sk_live_…`-shaped literal, even a fake one.
+- ✅ **CI hardening** — the RLS isolation test failed in CI because the `postgres` superuser
+  **bypasses RLS even with FORCE**; fixed by running the scoped query under a `NOSUPERUSER`
+  role (`SET LOCAL ROLE`) inside `withTenantRls`. Bumped `actions/checkout` + `setup-node` to v5
+  (the remaining Node-20 warning is `pnpm/action-setup@v4`, its latest — harmless).
+- ✅ **TOTP two-factor auth (MFA)** — RFC 6238 library on pure `node:crypto` (no new deps),
+  verified against the RFC test vectors; `User.mfaEnabled`/`mfaSecret` (migration `0011`);
+  sign-in requires a valid code when enabled; enrollment UI at `/settings/security`
+  (setup → verify → enable/disable). Defaults **off**, so demo/e2e/existing logins unaffected.
+- ✅ **Outbound webhooks** — `WebhookEndpoint`/`WebhookDelivery` models with RLS (migration
+  `0012`); alerts POSTed to tenant endpoints with **HMAC-SHA256 signing** (Stripe-style
+  `X-SecureFlow-Signature: t=<unix>,v1=<hex>` over `${timestamp}.${body}`, incl. a
+  timing-safe `verifySignature` helper); **idempotency** via a `(endpointId, eventKey)` unique
+  + stable `X-SecureFlow-Delivery` id; **retry with backoff** (0/1m/5m/15m/1h, then FAILED);
+  processed by the worker, the cron route, and "Run detection now"; management UI + delivery
+  log at `/settings/webhooks`; integration test drives success + retry with an injected fetch.
+- ✅ **Two more detectors (5 → 7)** — `account-takeover` (burst of failures **followed by a
+  success**) and `privilege-escalation` (clustered `PERMISSION_CHANGE` events — previously an
+  unused event type). Both tunable, with remediation text, unit tests, eval scenarios, and
+  seed/generator demo scenarios.
+
+### Current state (as of 2026-07-01)
+
+| Metric | Value |
+|---|---|
+| Commits | **89** on `main`, clean tree, synced with origin |
+| Tracked files | 163 |
+| Migrations | 12 (`0001_init` … `0012_webhooks`) |
+| Detectors | **7**, eval **100% precision/recall** across 9 labeled scenarios |
+| Unit tests | **56** across 9 files (`pnpm test`) |
+| Integration tests | 4 files: tenant isolation (app + RLS), ingestion, audit immutability, webhook delivery (`pnpm test:int`, needs Postgres — run in CI) |
+| E2E | Playwright: sign-up → mint key → ingest burst → detect → alert visible |
+| CI | 2 workflows, both green: `ci.yml` (lint/typecheck/unit/integration/build/e2e) + `secret-scan-demo.yml` (source gate + planted-secret demo) |
+| Deployment | **Not yet deployed** — config ready for Vercel + Neon (`docs/deploy.md`) |
+
+**What's intentionally left (user's call):** deploy live (Vercel + Neon + seed +
+`DEMO_MODE=true`), README screenshots, GitHub repo topics/description, then start portfolio
+project #2 (**LedgerGuard**, fintech). Known environment quirks: Docker daemon usually isn't
+running locally (integration/e2e verify in CI), and pnpm needs `allowBuilds` in
+`pnpm-workspace.yaml`.
 
 > **Implementation note (deviation from §5 below):** to stay consistent with the existing
 > `helpdesk` codebase, multi-tenancy uses a **flat model** — a `Tenant` plus `User.tenantId`
@@ -261,6 +308,8 @@ Detectors shipped:
 3. **Impossible travel** — two successful logins from geos too far apart for the time delta.
 4. **New device / new IP** — first-seen fingerprint for an actor.
 5. **Credential stuffing / brute force** — many distinct accounts from one IP, or many IPs to one account.
+6. **Account takeover** *(post-completion)* — a burst of failed logins followed by a success.
+7. **Privilege escalation** *(post-completion)* — clustered `PERMISSION_CHANGE` events by one actor.
 
 Scheduling: `scripts/worker.ts` runs the registry every N seconds over the recent window,
 writes/updates alerts, dedupes, and emits SSE. Evaluated by `scripts/eval.ts` against a
@@ -416,4 +465,4 @@ This makes the demo legible in seconds and gives interview talking points.
 
 ---
 
-*Last updated: 2026-06-17 · Stack confirmed against `D:\Projects\helpdesk`.*
+*Last updated: 2026-07-02 · Stack confirmed against `D:\Projects\helpdesk`. All phases + post-completion additions shipped; see the Progress section at the top for current state.*
